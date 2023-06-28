@@ -16,9 +16,11 @@ import openpyxl as xl
 # Openpyxl Styles
 from openpyxl.styles import Alignment
 from openpyxl.styles import Font
+# Modules to Sort Files in Order
+from natsort import natsorted
 
-class excelFormat:        
-        
+class excelFormat:     
+            
     def xls2xlsx(self, excelFile, outputFolder):
         """
         Converts .xls Files to .xlsx Files That OpenPyxl Can Read
@@ -113,7 +115,7 @@ class processFiles(excelFormat):
             print("Found the Following Files:", os.listdir(dataDirectory))
             sys.exit()
         
-        return analysisFile
+        return natsorted(analysisFile)
     
     def getExcelFile(self, oldFile, outputFolder, testSheetNum = 0, excelDelimiter = ","):
         """
@@ -152,7 +154,7 @@ class processFiles(excelFormat):
             sys.exit("The Following File is Neither CSV, TXT, Nor XLSX:", excelFile)
         
         # Return the Final Worksheet
-        print("Processing Data from the Excel File:", excelFile)
+        print("Processing Data:", excelFile.split("/")[-1])
         return xlWorksheet, xlWorkbook
     
     

@@ -77,9 +77,12 @@ class processData(generalAnalysis):
     
     def __init__(self, numInitCyclesToSkip, useCHIPeaks):
         super().__init__()
+        # Initialize CV analysis
+        self.analyzeCV = cvAnalysis.cvAnalysis()
+        # Specify analysis paramaeters.
         self.useCHIPeaks = useCHIPeaks
         self.numInitCyclesToSkip = numInitCyclesToSkip
-        
+
         # General Parameters
         self.scaleCurrent = 10**6
 
@@ -214,10 +217,7 @@ class processData(generalAnalysis):
 
         return peakInfoHolder
     
-    def getPeaks(self, potentialFrames, currentFrames, pointsPerSegment):
-        # Initialize CV analysis
-        analyzeCV = cvAnalysis.cvAnalysis()
-        
+    def getPeaks(self, potentialFrames, currentFrames, pointsPerSegment):        
         # Create data structures to hold information: [OXIDATION, REDUCTION]
         peakInfoHolder = [[], []]
         
@@ -233,7 +233,7 @@ class processData(generalAnalysis):
                 current = currentFull[segmentScale*pointsPerSegment:(segmentScale+1)*pointsPerSegment]
 
                 # Analyze each segment
-                linearFit, peakPotential, peakCurrent, linearFitBounds, reductiveScan = analyzeCV.findPeaks(potential, current)
+                linearFit, peakPotential, peakCurrent, linearFitBounds, reductiveScan = self.analyzeCV.findPeaks(potential, current)
 
                 # If a peak was found
                 if len(linearFit) != 0:
@@ -256,7 +256,7 @@ class processData(generalAnalysis):
         
         # Get the Current/Potential/Times of each CV scan.
         currentFrames, potentialFrames, timeFrames = self.extractCHIData(xlWorksheet, startRow, scanRate, pointsPerScan)
-        print("Finished Data Extraction");
+        print("\tFinished Data Extraction");
         
         # Find the peaks in each CV scan
         if self.useCHIPeaks:
@@ -266,7 +266,7 @@ class processData(generalAnalysis):
             
         # Finished Data Collection: Close Workbook and Return Data to User
         xlWorkbook.close()
-        print("Finished Data Analysis");
+        print("\tFinished Data Analysis");
         return peakInfoHolder, currentFrames, potentialFrames, timeFrames
 
     

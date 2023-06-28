@@ -1,8 +1,4 @@
 
-"""
-
-"""
-
 # -------------------------------------------------------------------------- #
 # ------------------------- Imported Modules --------------------------------#
 
@@ -10,6 +6,7 @@
 import sys
 import numpy as np
 # Modules to Plot
+import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.animation as manimation
 
@@ -45,7 +42,7 @@ class plotDataCV:
             ["tab:brown", "tab:purple", "tab:pink", "tab:cyan", "tab:gray"]]
     
     def plotCurves(self, potentialFrames, currentFrames, timeFrames, peakInfoHolder):
-        print("Plotting the Data")
+        print("\tPlotting the Data")
         # Initialize the canvas for plotting
         self.initializeFigure(peakInfoHolder)
         self.initializePlots(peakInfoHolder, potentialFrames, currentFrames)
@@ -77,9 +74,8 @@ class plotDataCV:
 
     def initializePlots(self, peakInfoHolder, potentialFrames, currentFrames):
         # Initialize Movie Writer for Plots
-        FFMpegWriter = manimation.writers['ffmpeg']
         metadata = dict(title=self.title, artist='Matplotlib', comment='Movie support!')
-        self.writer = FFMpegWriter(fps=7, metadata=metadata)
+        self.writer = matplotlib.animation.FFMpegWriter(fps=7, metadata=metadata)
         self.movieGraphLeftCurrent = self.axLeft.plot([0], [0], 'tab:blue', '-', linewidth=1, alpha = 1)[0]
         if self.seePastCVData:
             self.movieGraphLeftPrev = self.axLeft.plot([0], [0], 'tab:blue', '-', linewidth=1, alpha = 0.1)[0]

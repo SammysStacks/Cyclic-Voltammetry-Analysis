@@ -166,10 +166,17 @@ class bestLinearFit:
         smallestSlope = (yData[-1] - yData[0])/(xData[-1] - xData[0])
         
         # For Each Index Pair on the Left and Right of the Peak
-        for rightInd in range(midLineInd, len(yData), 1):
-            for leftInd in range(midLineInd, -1, -1):
+        for rightInd in range(midLineInd+1, len(yData), 1):
+            for leftInd in range(midLineInd-1, -1, -1):
                 if rightInd-leftInd < minLength:
                     continue
+                
+                # Draw a Linear Line Between the Points
+                lineSlope = (yData[leftInd] - yData[rightInd])/(xData[leftInd] - xData[rightInd])
+                slopeIntercept = yData[leftInd] - lineSlope*xData[leftInd]
+                linearFit = lineSlope + slopeIntercept
+                # Find the Number of Points Above the Tangent Line
+                # pointBelowRightLine = len(linearFit[rightInd:]
             
                 # Get the slope of the line
                 lineSlope = (yData[leftInd] - yData[rightInd])/(xData[leftInd] - xData[rightInd])
@@ -203,9 +210,9 @@ class bestLinearFit:
         elif newPointer_Left == xPointer:
             return newPointer_Right
         else:
-            return max([newPointer_Left, newPointer_Right], key = lambda ind: data[ind])  
-    
-    def findNearbyMinimum(self, data, xPointer, binarySearchWindow = 5, maxPointsSearch = 500):
+            return max([newPointer_Left, newPointer_Right], key = lambda ind: data[ind]) 
+        
+    def findNearbyMinimum(self, data, xPointer, binarySearchWindow = 5, maxPointsSearch = 10000):
         """
         Search Right: binarySearchWindow > 0
         Search Left: binarySearchWindow < 0
@@ -231,8 +238,7 @@ class bestLinearFit:
         # If Your Binary Search is Too Large, Reduce it
         return self.findNearbyMinimum(data, maxHeightPointer, round(binarySearchWindow/2), maxPointsSearch-1)
     
-
-    def findNearbyMaximum(self, data, xPointer, binarySearchWindow = 5, maxPointsSearch = 500):
+    def findNearbyMaximum(self, data, xPointer, binarySearchWindow = 5, maxPointsSearch = 10000):
         """
         Search Right: binarySearchWindow > 0
         Search Left: binarySearchWindow < 0

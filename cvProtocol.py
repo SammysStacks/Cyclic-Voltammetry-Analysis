@@ -2,7 +2,7 @@
 """
 Need to Install in the Python Enviroment Beforehand:
     $ conda install openpyxl
-    % conda install ffmpeg
+    % conda install ffmpeg ffmpeg-python
 """
 
 # -------------------------------------------------------------------------- #
@@ -11,8 +11,7 @@ Need to Install in the Python Enviroment Beforehand:
 # Basic Modules
 import os
 import sys
-# Modules to Sort Files in Order
-from natsort import natsorted
+
 
 # Import Helper Files
 sys.path.append('./Helper Files/')
@@ -37,36 +36,30 @@ if __name__ == "__main__":
     # Specify the Directory with All the Data (CSV Files Exported from CHI)
     dataDirectory = "./data/2022-03-23 MQ HCF/" # The Folder with the CV Files (TXT/CSV/XLS/XLSX)
     
-    # Flags Specifying the Analysis
-    skipIfDataAlreadyExcel = False  # Skip Over Data if CSV->Excel has Already Been Done (No Graphs!)
-    useAllFolderFiles = True        # If False, Populate the cvFile_List Yourself (Choose Your Files Below)
+    # Plotting flags
     showPeakCurrent = True          # Display Real-Time Peak Current Data on Right (ONLY IF Peak Current Exists)
     seePastCVData = True            # See All CSV Frames in the Background (with 10% opacity)
     showFullInfo = True             # Plot Peak Potential and See Coefficient of VariationList Plot for peak Current
-    useCHIPeaks = False
+    # Program flags
+    useCHIPeaks = False             # Do not reanalyze the CV curves. Use CHI-given peaks.
     
-    # Edit Data
+    # Program 
     numInitCyclesToSkip = 1         # Number of Beginning Cycles to Skip (In the First Few Cycles the Electrode is Adapting).
     
-    if useAllFolderFiles:
-        # Specify Which Files You Want to Read
-        fileDoesntContain = "N/A"
-        fileContains = ""
-    else:
-        cvFiles = []
+    # Specify Which Files You Want to Read
+    fileDoesntContain = "N/A"       # Substring that cannot be in analyze filenames.
+    fileContains = ""               # Substring that must be in analyze filenames.
     
     # ---------------------------------------------------------------------- #
     # ------------------------- Preparation Steps -------------------------- #
     
-    # Initialize analysis files
+    # Initialize analysis classes.
+    saveData = excelProcessing.saveData()
     extractData = excelProcessing.processFiles()
     analyzeDataCV = processDataCV.processData(numInitCyclesToSkip, useCHIPeaks)
     
-    # Get the files to analyze
-    if useAllFolderFiles:
-        cvFiles = extractData.getFiles(dataDirectory, fileDoesntContain, fileContains)
-    # Process files in a sorted order
-    cvFiles = natsorted(cvFiles)
+    # Get the files to analyze in sorted order
+    cvFiles = extractData.getFiles(dataDirectory, fileDoesntContain, fileContains)
     
     # Create the output folder if the one the provided does not exist
     outputDirectory = dataDirectory +  "CV Analysis/"
@@ -75,7 +68,7 @@ if __name__ == "__main__":
     # ---------------------------------------------------------------------- #
     # ----------------------------- CV Program ----------------------------- #
     
-    # For each file, extract the data and plot the results
+    # For each CV file.
     for currentFile in cvFiles: 
         
         # ------------------------ Extract the Data ------------------------ #
@@ -96,9 +89,8 @@ if __name__ == "__main__":
         plotData.plotCurves(potentialFrames, currentFrames, timeFrames, peakInfoHolder)
         
         # Save the Data
-        saveData = excelProcessing.saveData()
         savePeakInfoFolder = outputDirectory + "Peak Information/"
-        saveData.saveDataCV(peakInfoHolder, savePeakInfoFolder, fileName, sheetName = "CV Analysis")
+        saveData.saveDataCV(peakInfoHolder, savePeakInfoFolder, fileName + ".xlsx", sheetName = "CV Analysis")
         # ------------------------------------------------------------------ # 
         
 
