@@ -36,6 +36,8 @@ if __name__ == "__main__":
     # Specify the Directory with All the Data (CSV Files Exported from CHI)
     dataDirectory = "./data/2022-03-23 MQ HCF/" # The Folder with the CV Files (TXT/CSV/XLS/XLSX)
     
+    dataDirectory = "/Users/samuelsolomon/Desktop/Gao Group/Projects/_notPublished/Stress Sensor/Prussian Blue/2020/12-3-2020 PB stability/"
+    
     # Plotting flags
     showPeakCurrent = True          # Display Real-Time Peak Current Data on Right (ONLY IF Peak Current Exists)
     seePastCVData = True            # See All CSV Frames in the Background (with 10% opacity)
@@ -48,7 +50,7 @@ if __name__ == "__main__":
     
     # Specify Which Files You Want to Read
     fileDoesntContain = "N/A"       # Substring that cannot be in analyze filenames.
-    fileContains = ""               # Substring that must be in analyze filenames.
+    fileContains = "New part"               # Substring that must be in analyze filenames.
     
     # ---------------------------------------------------------------------- #
     # ------------------------- Preparation Steps -------------------------- #

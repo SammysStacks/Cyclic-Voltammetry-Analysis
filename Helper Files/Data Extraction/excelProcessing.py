@@ -159,6 +159,33 @@ class processFiles(excelFormat):
     
     
 class saveData(excelFormat):
+    def __init__(self):
+        super().__init__()
+        
+        self.emptySheetName = "Empty Sheet"
+    
+    def getExcelDocument(self, excelFile, overwriteSave = False):
+        # If the excel file you are saving already exists.
+        if os.path.isfile(excelFile):
+            # If You Want to Overwrite the Excel.
+            if overwriteSave:
+                print("\t\tDeleting Old Excel Workbook")
+                os.remove(excelFile) 
+            else:
+                print("\t\tNot overwriting the file ... but your file already exists??")
+            
+        # If the File is Not Present: Create The Excel File
+        if not os.path.isfile(excelFile):
+            print("\t\tCreating New Excel Workbook")
+            # Make Excel WorkBook
+            WB = xl.Workbook()
+            worksheet = WB.active 
+            worksheet.title = self.emptySheetName
+        else:
+            print("\t\tExcel File Already Exists. Adding New Sheet to File")
+            WB = xl.load_workbook(excelFile, read_only=False)
+            worksheet = WB.create_sheet(self.emptySheetName)
+        return WB, worksheet
     
     def saveDataCV(self, peakInfoHolder, saveDataFolder, saveExcelName, sheetName = "CV Analysis"):
         print("Saving the Data")
@@ -168,16 +195,8 @@ class saveData(excelFormat):
         # Create Path to Save the Excel File
         excelFile = saveDataFolder + saveExcelName
         
-        # If the File is Not Present: Create it
-        if not os.path.isfile(excelFile):
-            # Make Excel WorkBook
-            WB = xl.Workbook()
-            WB_worksheet = WB.active 
-            WB_worksheet.title = sheetName
-        else:
-            print("Excel File Already Exists. Adding New Sheet to File")
-            WB = xl.load_workbook(excelFile)
-            WB_worksheet = WB.create_sheet(sheetName)
+        # Get the excel document.
+        WB, worksheet = self.getExcelDocument(excelFile, overwriteSave = True)
             
         headers = ["Cycle Number"]
         # Add a header label for each peak
@@ -187,7 +206,7 @@ class saveData(excelFormat):
             for peakNum in range(len(peakInfoHolder[reductiveScan])):
                 peakInfoString = peakType + " Peak " + str(peakNum)
                 headers.extend([peakInfoString + " Potential (V)", peakInfoString + " Current (uAmps)", ""])
-        WB_worksheet.append(headers)
+        worksheet.append(headers)
         
         # Organize and save the data
         for frameNum in range(len(peakInfoHolder[0][0])):
@@ -200,10 +219,10 @@ class saveData(excelFormat):
                     frameData.extend([Ep, Ip, ""])
 
             # Write the Data to Excel
-            WB_worksheet.append(frameData)
+            worksheet.append(frameData)
         
         # Add Excel Aesthetics
-        WB_worksheet = self.addExcelAesthetics(WB_worksheet)    
+        worksheet = self.addExcelAesthetics(worksheet)    
             
         # Save as New Excel File
         WB.save(excelFile)

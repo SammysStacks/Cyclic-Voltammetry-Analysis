@@ -251,11 +251,15 @@ class plotDataCV:
             for peakList in peakInfoHolder[reductiveScan]:
                 for peak in peakList:
                     # Find the bounds on peak current
-                    largestPeakCurrent = np.nanmax([largestPeakCurrent, peak[1]])
-                    smallestPeakCurrent = np.nanmin([smallestPeakCurrent, peak[1]])
+                    if not np.isnan(peak[1]):
+                        largestPeakCurrent = np.nanmax([largestPeakCurrent, peak[1]])
+                        smallestPeakCurrent = np.nanmin([smallestPeakCurrent, peak[1]])
                     # Find the bounds on peak potential
-                    largestPeakPotential = np.nanmax([largestPeakPotential, peak[0]])
-                    smallestPeakPotential = np.nanmin([smallestPeakPotential, peak[0]])
+                    if not np.isnan(peak[0]):
+                        largestPeakPotential = np.nanmax([largestPeakPotential, peak[0]])
+                        smallestPeakPotential = np.nanmin([smallestPeakPotential, peak[0]])
+        assert not np.isnan(largestPeakCurrent) and not np.isnan(smallestPeakCurrent)
+        assert not np.isnan(largestPeakPotential) and not np.isnan(smallestPeakPotential)
                     
         yMargins = abs(largestPeakCurrent - smallestPeakCurrent) * 0.05 # plt.margins()[1], 0.05
         smallestPeakCurrent -= yMargins
