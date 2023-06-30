@@ -284,7 +284,7 @@ class processData(generalAnalysis):
                                   bothBaselineBoundsGroups[reductiveScan], bothBaselineFitGroups[reductiveScan], cycleNum, len(potential))
                 # Assert the integrity of the data collection.
                 if len(bothPeakPotentialGroups[reductiveScan]) !=0:
-                    assert len(bothPeakPotentialGroups[reductiveScan][0]) == cycleNum + 1, print(len(bothPeakPotentialGroups[reductiveScan][0]), cycleNum + 1)
+                    assert len(bothPeakPotentialGroups[reductiveScan][0]) == cycleNum + 1, print("Likely two similar peaks recorded as same group", len(bothPeakPotentialGroups[reductiveScan][0]), cycleNum + 1)
         # bothBaselineFitGroups Dim: 2, # groups, # frames, # points per red/ox
         # bothPeakCurrentGroups Dim: 2, # groups, # frames
         # bothPeakPotentialGroups Dim: 2, # groups, # frames

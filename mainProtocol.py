@@ -36,7 +36,7 @@ if __name__ == "__main__":
     # Specify the Directory with All the Data (CSV Files Exported from CHI)
     dataDirectory = "./data/2022-03-23 MQ HCF/" # The Folder with the CV Files (TXT/CSV/XLS/XLSX)
     
-    # dataDirectory = "/Users/samuelsolomon/Desktop/Gao Group/Projects/_notPublished/Stress Sensor/Prussian Blue/2020/12-3-2020 PB stability/"
+    dataDirectory = "/Users/samuelsolomon/Desktop/Gao Group/Projects/_notPublished/Stress Sensor/Prussian Blue/2020/12-3-2020 PB stability/"
     
     # dataDirectory = "./data/Jose/" # The Folder with the CV Files (TXT/CSV/XLS/XLSX)
 

@@ -263,21 +263,20 @@ class plotDataCV:
         largestPeakPotential = np.nan; smallestPeakPotential = np.nan
         # Get the bounds on the peak current
         for reductiveScan in range(len(bothPeakPotentialGroups)):
-            largestPeakCurrent = np.nanmax([largestPeakCurrent, np.nanmax(bothPeakCurrentGroups[reductiveScan])])
-            smallestPeakCurrent = np.nanmin([smallestPeakCurrent, np.nanmin(bothPeakCurrentGroups[reductiveScan])])
-            largestPeakPotential = np.nanmax([largestPeakPotential, np.nanmax(bothPeakPotentialGroups[reductiveScan])])
-            smallestPeakPotential = np.nanmin([smallestPeakPotential, np.nanmin(bothPeakPotentialGroups[reductiveScan])])
-        # Assert that peaks were found in all cases.
-        assert not np.isnan(largestPeakCurrent) and not np.isnan(smallestPeakCurrent)
-        assert not np.isnan(largestPeakPotential) and not np.isnan(smallestPeakPotential)
-                    
-        yMargins = abs(largestPeakCurrent - smallestPeakCurrent) * 0.05 # plt.margins()[1], 0.05
-        smallestPeakCurrent -= yMargins
-        largestPeakCurrent += yMargins
+            if len(bothPeakCurrentGroups[reductiveScan]) != 0:
+                largestPeakCurrent = np.nanmax([largestPeakCurrent, np.nanmax(bothPeakCurrentGroups[reductiveScan])])
+                smallestPeakCurrent = np.nanmin([smallestPeakCurrent, np.nanmin(bothPeakCurrentGroups[reductiveScan])])
+                largestPeakPotential = np.nanmax([largestPeakPotential, np.nanmax(bothPeakPotentialGroups[reductiveScan])])
+                smallestPeakPotential = np.nanmin([smallestPeakPotential, np.nanmin(bothPeakPotentialGroups[reductiveScan])])
+
+        if not np.isnan(largestPeakCurrent):
+            yMargins = abs(largestPeakCurrent - smallestPeakCurrent) * 0.05 # plt.margins()[1], 0.05
+            smallestPeakCurrent -= yMargins
+            largestPeakCurrent += yMargins
         
-        yMargins = abs(largestPeakPotential - smallestPeakPotential) * 0.05 # plt.margins()[1], 0.05
-        smallestPeakPotential -= yMargins
-        largestPeakPotential += yMargins
+            yMargins = abs(largestPeakPotential - smallestPeakPotential) * 0.05 # plt.margins()[1], 0.05
+            smallestPeakPotential -= yMargins
+            largestPeakPotential += yMargins
         
         return smallestCurrent_CV, largestCurrent_CV, smallestPeakCurrent, largestPeakCurrent, smallestPeakPotential, largestPeakPotential
     

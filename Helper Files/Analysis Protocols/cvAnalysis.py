@@ -109,12 +109,12 @@ class cvProtocol():
         # For each peak found.
         for sortedPeakInd in range(len(sortedPeaks)):
             peakInd = sortedPeaks[sortedPeakInd]
-            # Ignore nearby peaks.
-            if peakInd < lastPeakInd:
+            if peakInd < midBaselineInd:
                 continue
             
             # Find the baseline and perform a linear baseline fit.
-            leftBaselineInd, rightBaselineInd = self.linearBaselineFit.findSmallestSlope(potential[lastPeakInd:peakInd], current[lastPeakInd:peakInd], midBaselineInd, int(peakInd - lastPeakInd/3))
+            leftBaselineInd, rightBaselineInd = self.linearBaselineFit.findLinearBaseline(potential[lastPeakInd:peakInd], current[lastPeakInd:peakInd], midBaselineInd)
+            if leftBaselineInd == None: continue
             linearFit = self.findLinearFit(potential, current, leftBaselineInd, rightBaselineInd)
 
             # Readjust the chemical peak
@@ -124,20 +124,30 @@ class cvProtocol():
             # Ignore bad peaks.
             if peakInd == len(potential) - 1:
                 continue
-            lastPeakInd = peakInd
+            # Ignore peaks that have been found
+            if len(finalPeaks) != 0 and peakInd in finalPeaks:
+                continue
+            # Enfore a minimal duration between peaks
+            if len(finalPeaks) != 0:
+                goodPeak = True
+                for oldPeak in finalPeaks:
+                    if potential[peakInd] - potential[oldPeak] < 0.01:
+                        goodPeak = False
+                if not goodPeak: continue
 
             # If there is another peak to analyze
             if sortedPeakInd < len(sortedPeaks) - 1:
                 nextPeakInd = sortedPeaks[sortedPeakInd+1]
                 # Check if we need to recalibrate the baseline
                 intervalPoints = baselineData[peakInd:nextPeakInd]
-                if samplingFreq*0.03 < (intervalPoints < 0).sum():
+                if samplingFreq*0.02 < (intervalPoints < 0).sum():
                     print("HERE")
                     # Find the baseline from both sides of the peak.
-                    midBaselineInd_Left = self.universalMethods.findNearbyMinimum(baselineData, peakInd, 1)
-                    midBaselineInd_Right = self.universalMethods.findNearbyMinimum(baselineData, nextPeakInd, -1)
+                    midBaselineInd_Left = self.universalMethods.findNearbyMinimum(baselineData, peakInd, int(samplingFreq*0.01))
+                    midBaselineInd_Right = self.universalMethods.findNearbyMinimum(baselineData, nextPeakInd, -int(samplingFreq*0.01))
                     # Use the middle between both of the baselines.
                     midBaselineInd = int((midBaselineInd_Left + midBaselineInd_Right)/2)
+                    lastPeakInd = peakInd
             
             # Organize the variables.
             peakCurrent = baselineData[peakInd]

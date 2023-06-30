@@ -192,8 +192,8 @@ class saveData(excelFormat):
         print("\tSaving the Data")
         # Create Output File Directory to Save Data: If Not Already Created
         os.makedirs(saveDataFolder, exist_ok=True)
-        numFrames = len(bothPeakPotentialGroups[0][0])
         numScans = len(bothPeakPotentialGroups)
+        hasPeaks = len(bothPeakPotentialGroups[0]) != 0
         
         # Get the excel document.
         excelFile = saveDataFolder + saveExcelName
@@ -213,18 +213,20 @@ class saveData(excelFormat):
         worksheet.append(headers)
         
         # Organize and save the data
-        for frameNum in range(numFrames):
-            frameData = [frameNum+1]
-            
-            for reductiveScan in range(numScans):
-                numPeakGroups = len(bothPeakPotentialGroups[reductiveScan])
-
-                for peakGroupInd in range(numPeakGroups):
-                    Ip = bothPeakCurrentGroups[reductiveScan][peakGroupInd][frameNum]
-                    Ep = bothPeakPotentialGroups[reductiveScan][peakGroupInd][frameNum]
-                    frameData.extend([Ep, Ip, ""])
-            # Write the Data to Excel
-            worksheet.append(frameData)
+        if hasPeaks:
+            numFrames = len(bothPeakPotentialGroups[0][0])
+            for frameNum in range(numFrames):
+                frameData = [frameNum+1]
+                
+                for reductiveScan in range(numScans):
+                    numPeakGroups = len(bothPeakPotentialGroups[reductiveScan])
+    
+                    for peakGroupInd in range(numPeakGroups):
+                        Ip = bothPeakCurrentGroups[reductiveScan][peakGroupInd][frameNum]
+                        Ep = bothPeakPotentialGroups[reductiveScan][peakGroupInd][frameNum]
+                        frameData.extend([Ep, Ip, ""])
+                # Write the Data to Excel
+                worksheet.append(frameData)
         
         # Add Excel Aesthetics
         worksheet = self.addExcelAesthetics(worksheet)    
