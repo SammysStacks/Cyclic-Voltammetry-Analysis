@@ -154,7 +154,7 @@ class processFiles(excelFormat):
             sys.exit("The Following File is Neither CSV, TXT, Nor XLSX:", excelFile)
         
         # Return the Final Worksheet
-        print("Processing Data:", excelFile.split("/")[-1])
+        print("\nProcessing Data:", excelFile.split("/")[-1])
         return xlWorksheet, xlWorkbook
     
     
@@ -189,7 +189,7 @@ class saveData(excelFormat):
     
     def saveDataCV(self, bothPeakPotentialGroups, bothPeakCurrentGroups, bothBaselineBoundsGroups, \
                    bothBaselineFitGroups, saveDataFolder, saveExcelName, sheetName = "CV Analysis"):
-        print("Saving the Data")
+        print("\tSaving the Data")
         # Create Output File Directory to Save Data: If Not Already Created
         os.makedirs(saveDataFolder, exist_ok=True)
         numPeakGroups = len(bothPeakPotentialGroups[0])
