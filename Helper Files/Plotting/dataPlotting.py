@@ -285,18 +285,3 @@ class plotDataCV:
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
