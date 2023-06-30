@@ -71,12 +71,14 @@ class generalAnalysis():
         # If no group was identified.
         if not peakGroupFound:
             # Make a new group.
-            newGroup = [np.nan] * cycleNum
+            newGroupSingle = [np.nan] * cycleNum
+            newGroupDouble = [[np.nan]*2] * cycleNum
+            newGroupFull = [[np.nan]*len(linearFit)] * cycleNum
             # Add the group to the holders.
-            baselineFitGroups.append(newGroup.copy())
-            peakCurrentGroups.append(newGroup.copy())
-            peakPotentialGroups.append(newGroup.copy())
-            baselineBoundsGroups.append(newGroup.copy())
+            baselineFitGroups.append(newGroupFull.copy())
+            peakCurrentGroups.append(newGroupSingle.copy())
+            peakPotentialGroups.append(newGroupSingle.copy())
+            baselineBoundsGroups.append(newGroupDouble.copy())
             # Specify the group number
             peakGroupInd = -1
 
@@ -87,8 +89,20 @@ class generalAnalysis():
         peakPotentialGroups[peakGroupInd].append(peakPotential)
         baselineBoundsGroups[peakGroupInd].append(linearFitBounds)
         
-        # Return the new peakInfo_RedOx with the value added
-        # return peakPotentialGroups, peakCurrentGroups, baselineBoundsGroups, baselineFitGroups
+    def padAllGroups(self, peakPotentialGroups, peakCurrentGroups, baselineBoundsGroups, baselineFitGroups, cycleNum, numPoints):
+        for groupInd in range(len(peakPotentialGroups)):
+            if len(peakPotentialGroups[groupInd]) != cycleNum + 1:
+                peakPotentialGroups[groupInd].append(np.nan)
+                
+            if len(peakCurrentGroups[groupInd]) != cycleNum + 1:
+                peakCurrentGroups[groupInd].append(np.nan)
+                
+            if len(baselineBoundsGroups[groupInd]) != cycleNum + 1:
+                baselineBoundsGroups[groupInd].append([np.nan]*2)
+                
+            if len(baselineFitGroups[groupInd]) != cycleNum + 1:
+                baselineFitGroups[groupInd].append([np.nan]*numPoints)
+        
     
 # -------------------------------------------------------------------------- #
 # ------------------------------ CV Extraction ----------------------------- #
@@ -266,24 +280,45 @@ class processData(generalAnalysis):
                     self.addPeakInfo_toGroups(bothPeakPotentialGroups[reductiveScan], bothPeakCurrentGroups[reductiveScan], 
                                               bothBaselineBoundsGroups[reductiveScan], bothBaselineFitGroups[reductiveScan], 
                                               peakPotential, peakCurrent, linearFitBounds, linearFit, cycleNum)
+                
+                self.padAllGroups(bothPeakPotentialGroups[reductiveScan], bothPeakCurrentGroups[reductiveScan], 
+                                  bothBaselineBoundsGroups[reductiveScan], bothBaselineFitGroups[reductiveScan], cycleNum, len(potential))
+                
+        # bothBaselineFitGroups Dim: 2, # groups, # frames, # points per red/ox
+        # bothPeakCurrentGroups Dim: 2, # groups, # frames
+        # bothPeakPotentialGroups Dim: 2, # groups, # frames
+        # bothBaselineBoundsGroups Dim: 2, # groups, # frames, # points per red/ox
+        # Convert to numpy arrays.
+        bothBaselineFitGroups[0] = np.asarray(bothBaselineFitGroups[0])
+        bothPeakCurrentGroups[0] = np.asarray(bothPeakCurrentGroups[0])
+        bothPeakPotentialGroups[0] = np.asarray(bothPeakPotentialGroups[0])
+        bothBaselineBoundsGroups[0] = np.asarray(bothBaselineBoundsGroups[0])
+        # Convert to numpy arrays.
+        bothBaselineFitGroups[1] = np.asarray(bothBaselineFitGroups[1])
+        bothPeakCurrentGroups[1] = np.asarray(bothPeakCurrentGroups[1])
+        bothPeakPotentialGroups[1] = np.asarray(bothPeakPotentialGroups[1])
+        bothBaselineBoundsGroups[1] = np.asarray(bothBaselineBoundsGroups[1])
         
-        # Convert to numpy arrays
-        bothBaselineFitGroups = np.asarray(bothBaselineFitGroups)        # Dim: 2, # groups, # frames, # points per red/ox
-        bothPeakCurrentGroups = np.asarray(bothPeakCurrentGroups)        # Dim: 2, # groups, # frames
-        bothPeakPotentialGroups = np.asarray(bothPeakPotentialGroups)    # Dim: 2, # groups, # frames
-        bothBaselineBoundsGroups = np.asarray(bothBaselineBoundsGroups)  # Dim: 2, # groups, # frames, # points per red/ox
         # Assert the integrity of all the data
-        self.assertHolderIntegrity(bothPeakPotentialGroups, bothPeakCurrentGroups, bothBaselineBoundsGroups, bothBaselineFitGroups, len(potentialFrames), len(potential))
+        self.assertHolderIntegrity(bothPeakPotentialGroups[0], bothPeakCurrentGroups[0], bothBaselineBoundsGroups[0], bothBaselineFitGroups[0], len(potentialFrames), len(potential))
+        self.assertHolderIntegrity(bothPeakPotentialGroups[1], bothPeakCurrentGroups[1], bothBaselineBoundsGroups[1], bothBaselineFitGroups[1], len(potentialFrames), len(potential))
 
         return bothPeakPotentialGroups, bothPeakCurrentGroups, bothBaselineBoundsGroups, bothBaselineFitGroups
             
-    def assertHolderIntegrity(self, bothPeakPotentialGroups, bothPeakCurrentGroups, bothBaselineBoundsGroups, bothBaselineFitGroups, numFrames, numPoints):
-        numGroups = len(bothPeakPotentialGroups[0])
-        # Assert that the holders have the correct shape.
-        assert bothPeakCurrentGroups.shape == (2, numGroups, numFrames), bothPeakCurrentGroups.shape
-        assert bothPeakPotentialGroups.shape == (2, numGroups, numFrames), bothPeakPotentialGroups.shape
-        assert bothBaselineBoundsGroups.shape == (2, numGroups, numFrames, 2), bothBaselineBoundsGroups.shape
-        assert bothBaselineFitGroups.shape == (2, numGroups, numFrames, numPoints), bothBaselineFitGroups.shape
+    def assertHolderIntegrity(self, peakPotentialGroups, peakCurrentGroups, baselineBoundsGroups, baselineFitGroups, numFrames, numPoints):
+        numGroups = len(peakPotentialGroups)
+        if numGroups != 0:
+            # Assert that the holders have the correct shape.
+            assert peakCurrentGroups.shape == (numGroups, numFrames), peakCurrentGroups.shape
+            assert peakPotentialGroups.shape == (numGroups, numFrames), peakPotentialGroups.shape
+            assert baselineBoundsGroups.shape == (numGroups, numFrames, 2), baselineBoundsGroups.shape
+            assert baselineFitGroups.shape == (numGroups, numFrames, numPoints), baselineFitGroups.shape
+        else:
+            # Assert that the holders have the correct shape.
+            assert peakCurrentGroups.shape == (0,), peakCurrentGroups.shape
+            assert peakPotentialGroups.shape == (0,), peakPotentialGroups.shape
+            assert baselineBoundsGroups.shape == (0,), baselineBoundsGroups.shape
+            assert baselineFitGroups.shape == (0,), baselineFitGroups.shape
 
     def processCV(self, xlWorksheet, xlWorkbook):  
         # Get the details about the the CV program

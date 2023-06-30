@@ -199,7 +199,9 @@ class plotDataCV:
                                                    "       Ip = NA\n" +
                                                    "       CoV = NA")
                                 continue
-                                
+                            # Enforce correct data type:
+                            baselineBounds = baselineBounds.astype(int)
+                            
                             # Get all the peak current and potentials
                             Ip_fromPreviousFrames = bothPeakCurrentGroups[reductiveScan][peakGroupInd][:frameNum+1]
                             Ep_fromPreviousFrames = bothPeakPotentialGroups[reductiveScan][peakGroupInd][:frameNum+1]
@@ -232,7 +234,7 @@ class plotDataCV:
                             if not self.useCHIPeaks:
                                 baselineX = x[int(len(x)/2):] if reductiveScan else x
                                 baselineY = y[int(len(y)/2):] if reductiveScan else y
-                                
+                                                                
                                 self.movieGraphLeftBaseline_RedOx[reductiveScan][peakGroupInd].set_data(baselineX[baselineBounds[0]:baselineBounds[1]], baselineFit[baselineBounds[0]:baselineBounds[1]])
                                 self.movieGraphLeftPeak_RedOx[reductiveScan][peakGroupInd].set_data(baselineX[ [baselineBounds[1], baselineBounds[1]] ], [ baselineFit[baselineBounds[1]], baselineY[baselineBounds[1]] ])
                             if self.showFullInfo:
@@ -260,11 +262,14 @@ class plotDataCV:
         smallestCurrent_CV -= yMargins
         largestCurrent_CV += yMargins
         
+        largestPeakCurrent = np.nan; smallestPeakCurrent = np.nan
+        largestPeakPotential = np.nan; smallestPeakPotential = np.nan
         # Get the bounds on the peak current
-        largestPeakCurrent = np.nanmax(bothPeakCurrentGroups)
-        smallestPeakCurrent = np.nanmin(bothPeakCurrentGroups)
-        largestPeakPotential = np.nanmax(bothPeakPotentialGroups)
-        smallestPeakPotential = np.nanmin(bothPeakPotentialGroups)
+        for reductiveScan in range(len(bothPeakPotentialGroups)):
+            largestPeakCurrent = np.nanmax([largestPeakCurrent, np.nanmax(bothPeakCurrentGroups[reductiveScan])])
+            smallestPeakCurrent = np.nanmin([smallestPeakCurrent, np.nanmin(bothPeakCurrentGroups[reductiveScan])])
+            largestPeakPotential = np.nanmax([largestPeakPotential, np.nanmax(bothPeakPotentialGroups[reductiveScan])])
+            smallestPeakPotential = np.nanmin([smallestPeakPotential, np.nanmin(bothPeakPotentialGroups[reductiveScan])])
         # Assert that peaks were found in all cases.
         assert not np.isnan(largestPeakCurrent) and not np.isnan(smallestPeakCurrent)
         assert not np.isnan(largestPeakPotential) and not np.isnan(smallestPeakPotential)
