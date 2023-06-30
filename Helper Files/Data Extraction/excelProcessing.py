@@ -192,7 +192,6 @@ class saveData(excelFormat):
         print("\tSaving the Data")
         # Create Output File Directory to Save Data: If Not Already Created
         os.makedirs(saveDataFolder, exist_ok=True)
-        numPeakGroups = len(bothPeakPotentialGroups[0])
         numFrames = len(bothPeakPotentialGroups[0][0])
         numScans = len(bothPeakPotentialGroups)
         
@@ -205,6 +204,8 @@ class saveData(excelFormat):
         peakTypes = ["Oxidation", "Reduction"]
         for reductiveScan in range(numScans):
             peakType = peakTypes[reductiveScan]
+            numPeakGroups = len(bothPeakPotentialGroups[reductiveScan])
+
             for peakGroupInd in range(numPeakGroups):
 
                 peakInfoString = peakType + " Peak " + str(peakGroupInd + 1)
@@ -216,6 +217,8 @@ class saveData(excelFormat):
             frameData = [frameNum+1]
             
             for reductiveScan in range(numScans):
+                numPeakGroups = len(bothPeakPotentialGroups[reductiveScan])
+
                 for peakGroupInd in range(numPeakGroups):
                     Ip = bothPeakCurrentGroups[reductiveScan][peakGroupInd][frameNum]
                     Ep = bothPeakPotentialGroups[reductiveScan][peakGroupInd][frameNum]

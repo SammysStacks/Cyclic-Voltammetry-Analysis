@@ -43,28 +43,28 @@ class plotDataCV:
     def plotCurves(self, potentialFrames, currentFrames, timeFrames, bothPeakPotentialGroups, 
                    bothPeakCurrentGroups, bothBaselineBoundsGroups, bothBaselineFitGroups):
         print("\tPlotting the Data")
-        numPeakGroups = len(bothPeakPotentialGroups[0])
+        numPeakGroupsBoth = [len(bothPeakPotentialGroups[0]), len(bothPeakPotentialGroups[1])]
         # Initialize the canvas for plotting
-        self.initializeFigure(numPeakGroups)
+        self.initializeFigure(numPeakGroupsBoth)
         self.initializePlots(bothPeakPotentialGroups, bothPeakCurrentGroups, bothBaselineBoundsGroups, 
-                             bothBaselineFitGroups, potentialFrames, currentFrames, numPeakGroups)
+                             bothBaselineFitGroups, potentialFrames, currentFrames, numPeakGroupsBoth)
         
         # Plot the data
         self.plotMovieCV(potentialFrames, currentFrames, timeFrames, bothPeakPotentialGroups, 
-                       bothPeakCurrentGroups, bothBaselineBoundsGroups, bothBaselineFitGroups, numPeakGroups)
+                       bothPeakCurrentGroups, bothBaselineBoundsGroups, bothBaselineFitGroups, numPeakGroupsBoth)
         
-    def addAxisPlots(self, ax, numPeakGroups):
+    def addAxisPlots(self, ax, numPeakGroupsBoth):
         peakPlots = [[], []]  # OXIDATION, REDUCTION
         # For Oxidation and Reduction peaks
         for reductionScan in range(2):
             # Initialize a plot for every peak possible inside one CV scan
-            for peakGroupInd in range(numPeakGroups):
+            for peakGroupInd in range(numPeakGroupsBoth[reductionScan]):
                 peakPlots[reductionScan].append(ax.plot([], [], '-o', c=self.peakCurrentColorOrder[reductionScan][peakGroupInd%len(self.peakCurrentColorOrder[reductionScan])], linewidth=1)[0])
         return peakPlots
         
-    def initializeFigure(self, numPeakGroups = 0):
+    def initializeFigure(self, numPeakGroupsBoth = 0):
         # Initialize Plot Figure (Must be BEFORE MovieWriter Initialization)
-        if self.showPeakCurrent and numPeakGroups != 0:
+        if self.showPeakCurrent and max(numPeakGroupsBoth) != 0:
             if self.showFullInfo:
                 self.figure, ax = plt.subplots(2, 2, sharey=False, sharex = False, figsize=(self.figureWidth,self.figureHeight))
                 self.axLeft = ax[0,0]; self.axRight = ax[0,1]
@@ -76,7 +76,7 @@ class plotDataCV:
             self.figure, self.axLeft = plt.subplots(1, 1, sharey=False, sharex = False, figsize=(self.figureWidth/2,self.figureHeight))
 
     def initializePlots(self, bothPeakPotentialGroups, bothPeakCurrentGroups, bothBaselineBoundsGroups, 
-                         bothBaselineFitGroups, potentialFrames, currentFrames, numPeakGroups):
+                         bothBaselineFitGroups, potentialFrames, currentFrames, numPeakGroupsBoth):
         # Initialize Movie Writer for Plots
         metadata = dict(title=self.title, artist='Matplotlib', comment='Movie support!')
         self.writer = manimation.FFMpegWriter(fps=7, metadata=metadata)
@@ -86,20 +86,17 @@ class plotDataCV:
         
         if not self.useCHIPeaks:
             self.movieGraphLeftPeak_RedOx = [[], []]
-            self.movieGraphLeftBaseline_RedOx = [[], []]
-            # For each baseline of a peak.
-            for peakGroupInd in range(numPeakGroups):
-                # Create lines to show the peak detection for the reduction segment
-                movieGraphLeftBaseline_Red = self.axLeft.plot([0], [0], 'tab:red', '-', linewidth=1, alpha = 1)[0]
-                movieGraphLeftPeak_Red = self.axLeft.plot([0], [0], 'black', '-', linewidth=1, alpha = 1)[0]
-                # Create lines to show the peak detection for the reduction segment
-                movieGraphLeftBaseline_Ox = self.axLeft.plot([0], [0], 'tab:red', '-', linewidth=1, alpha = 1)[0]
-                movieGraphLeftPeak_Ox = self.axLeft.plot([0], [0], 'black', '-', linewidth=1, alpha = 1)[0]
-                # Combine them into one data structure
-                self.movieGraphLeftBaseline_RedOx[1].append(movieGraphLeftBaseline_Red)
-                self.movieGraphLeftBaseline_RedOx[0].append(movieGraphLeftBaseline_Ox)
-                self.movieGraphLeftPeak_RedOx[1].append(movieGraphLeftPeak_Red)
-                self.movieGraphLeftPeak_RedOx[0].append(movieGraphLeftPeak_Ox)
+            self.movieGraphLeftBaseline_RedOx = [[], []]            
+            # For Oxidation and Reduction peaks
+            for reductionScan in range(2):
+                # Initialize a plot for every peak group
+                for peakGroupInd in range(numPeakGroupsBoth[reductionScan]):
+                    # Create lines to show the peak detection.
+                    movieGraphLeftBaseline = self.axLeft.plot([0], [0], 'tab:red', '-', linewidth=1, alpha = 1)[0]
+                    movieGraphLeftPeak = self.axLeft.plot([0], [0], 'black', '-', linewidth=1, alpha = 1)[0]
+                    # Combine them into one data structure
+                    self.movieGraphLeftBaseline_RedOx[reductionScan].append(movieGraphLeftBaseline)
+                    self.movieGraphLeftPeak_RedOx[reductionScan].append(movieGraphLeftPeak)
 
         # Get the global bounds for the plots
         axLeft_yMin, axLeft_yMax, axRight_yMin, axRight_yMax, axLowerLeft_yMin, axLowerLeft_yMax = \
@@ -114,7 +111,7 @@ class plotDataCV:
         self.axLeft.set_xlabel("Potential (Volts)")
         self.axLeft.set_ylabel("Current (uAmps)")
                 
-        if self.showPeakCurrent and numPeakGroups != 0:
+        if self.showPeakCurrent and max(numPeakGroupsBoth) != 0:
             
             # Set Axis X,Y Limits for the peakCurrent (right axis)
             self.axRight.set_xlim(0, len(potentialFrames))
@@ -124,7 +121,7 @@ class plotDataCV:
             self.axRight.set_xlabel("Cycle Number")
             self.axRight.set_ylabel("Peak Current (uAmps)")
             # Set the right axis: plotting peak current for every scan
-            self.peakCurrentPlots = self.addAxisPlots(self.axRight, numPeakGroups)
+            self.peakCurrentPlots = self.addAxisPlots(self.axRight, numPeakGroupsBoth)
             
             # If Adding Potential and Standard Deviation
             if self.showFullInfo:
@@ -136,7 +133,7 @@ class plotDataCV:
                 self.axLowerLeft.set_xlabel("Cycle Number")
                 self.axLowerLeft.set_ylabel("Peak Potential (Volts)")
                 # Set the lower left axis: plotting peak potential for every scan
-                self.peakPotentialPlots = self.addAxisPlots(self.axLowerLeft, numPeakGroups)
+                self.peakPotentialPlots = self.addAxisPlots(self.axLowerLeft, numPeakGroupsBoth)
                 
                 # Set Axis X,Y Limits for the peakCurrent (right axis)
                 self.axLowerRight.set_xlim(0, len(potentialFrames))
@@ -146,12 +143,12 @@ class plotDataCV:
                 self.axLowerRight.set_xlabel("Cycle Number")
                 self.axLowerRight.set_ylabel("Coefficient of Variation (%)")
                 # Set the lower left axis: plotting peak potential for every scan
-                self.peakCoVPlots = self.addAxisPlots(self.axLowerRight, numPeakGroups)
+                self.peakCoVPlots = self.addAxisPlots(self.axLowerRight, numPeakGroupsBoth)
         # Add padding to the figure
         self.figure.tight_layout(pad=2.0)
             
     def plotMovieCV(self, potentialFrames, currentFrames, timeFrames, bothPeakPotentialGroups, 
-                   bothPeakCurrentGroups, bothBaselineBoundsGroups, bothBaselineFitGroups, numPeakGroups):
+                   bothPeakCurrentGroups, bothBaselineBoundsGroups, bothBaselineFitGroups, numPeakGroupsBoth):
 
         # Open Movie Writer and Add Data
         with self.writer.saving(self.figure, self.outputDirectory + self.title + ".mp4", 300):
@@ -167,7 +164,7 @@ class plotDataCV:
                     self.movieGraphLeftPrev.set_data(np.array(potentialFrames[:frameNum]).flatten(), np.array(currentFrames[:frameNum]).flatten())
             
                 # Set Right Side
-                if self.showPeakCurrent and numPeakGroups != 0:
+                if self.showPeakCurrent and max(numPeakGroupsBoth) != 0:
                     legendListRight = []
                     # Loop through the oxidation and reduction plots
                     for reductiveScan in range(len(self.peakCurrentPlots)):                        
@@ -180,7 +177,7 @@ class plotDataCV:
                             sys.exit("Something went wrong with peakInfoHolder")
 
                         # For each set of peaks.
-                        for peakGroupInd in range(numPeakGroups):
+                        for peakGroupInd in range(numPeakGroupsBoth[reductiveScan]):
                             # Extract the peak information for the current frame
                             peakCurrent = bothPeakCurrentGroups[reductiveScan][peakGroupInd][frameNum]
                             baselineFit = bothBaselineFitGroups[reductiveScan][peakGroupInd][frameNum]

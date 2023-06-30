@@ -24,9 +24,6 @@ class cvProtocol():
         # CV parameters.
         self.lowPassCutoff = 100
         
-        # Initialize baseline subtraction classes.
-        self.linearBaselineFit = _baselineProtocols.bestLinearFit()
-        
         # Define general classes to process data.
         self.filteringMethods = _filteringProtocols.filteringMethods()
         self.universalMethods = _universalProtocols.universalMethods()
@@ -84,6 +81,9 @@ class cvProtocol():
         # ------------------------------------------------------------------ #
 
         # --------------------- Find the Chemical Peak --------------------- #
+        # Initialize baseline subtraction classes.
+        self.linearBaselineFit = _baselineProtocols.bestLinearFit(samplingFreq)
+        
         # Find Peaks in the Data
         peakIndices = self.linearBaselineFit.findPeaks(potential, current)
         # Return None if No Peak Found
@@ -109,6 +109,9 @@ class cvProtocol():
         # For each peak found.
         for sortedPeakInd in range(len(sortedPeaks)):
             peakInd = sortedPeaks[sortedPeakInd]
+            # Ignore nearby peaks.
+            if peakInd < lastPeakInd:
+                continue
             
             # Find the baseline and perform a linear baseline fit.
             leftBaselineInd, rightBaselineInd = self.linearBaselineFit.findSmallestSlope(potential[lastPeakInd:peakInd], current[lastPeakInd:peakInd], midBaselineInd, int(peakInd - lastPeakInd/3))
@@ -117,12 +120,12 @@ class cvProtocol():
             # Readjust the chemical peak
             baselineData = current - linearFit
             peakInd = self.universalMethods.findLocalMax(baselineData, peakInd, binarySearchWindow = 5)
-            
+
             # Ignore bad peaks.
             if peakInd == len(potential) - 1:
                 continue
             lastPeakInd = peakInd
-            
+
             # If there is another peak to analyze
             if sortedPeakInd < len(sortedPeaks) - 1:
                 nextPeakInd = sortedPeaks[sortedPeakInd+1]

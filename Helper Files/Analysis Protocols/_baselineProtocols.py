@@ -15,18 +15,20 @@ import matplotlib.pyplot as plt
 
 class bestLinearFit:
     
-    def __init__(self):
+    def __init__(self, samplingFreq):
         # Specify peak parameters.
+        self.minPeakDistance = samplingFreq*0.1
+        self.samplingFreq = samplingFreq
         self.ignoredBoundaryPoints = 10
         self.minLeftBoundaryInd = 100
-        self.minPeakDuration = 10
+        self.minPeakDuration = samplingFreq*0.02
     
     # ---------------------------------------------------------------------- #
     # ------------------------------ Find Peak ----------------------------- #
     
     def findPeaks(self, xData, yData, deriv = False):
         # Find All Peaks in the Data
-        peakInfo = scipy.signal.find_peaks(yData, prominence=10E-10, width=20, distance = 20)
+        peakInfo = scipy.signal.find_peaks(yData, prominence=10E-10, width=20, distance = self.minPeakDistance)
         
         # Extract the peak information
         peakProminences = peakInfo[1]['prominences']

@@ -81,7 +81,6 @@ class generalAnalysis():
             baselineBoundsGroups.append(newGroupDouble.copy())
             # Specify the group number
             peakGroupInd = -1
-
         
         # Then add the peak to this map
         baselineFitGroups[peakGroupInd].append(linearFit)
@@ -283,7 +282,9 @@ class processData(generalAnalysis):
                 
                 self.padAllGroups(bothPeakPotentialGroups[reductiveScan], bothPeakCurrentGroups[reductiveScan], 
                                   bothBaselineBoundsGroups[reductiveScan], bothBaselineFitGroups[reductiveScan], cycleNum, len(potential))
-                
+                # Assert the integrity of the data collection.
+                if len(bothPeakPotentialGroups[reductiveScan]) !=0:
+                    assert len(bothPeakPotentialGroups[reductiveScan][0]) == cycleNum + 1, print(len(bothPeakPotentialGroups[reductiveScan][0]), cycleNum + 1)
         # bothBaselineFitGroups Dim: 2, # groups, # frames, # points per red/ox
         # bothPeakCurrentGroups Dim: 2, # groups, # frames
         # bothPeakPotentialGroups Dim: 2, # groups, # frames
