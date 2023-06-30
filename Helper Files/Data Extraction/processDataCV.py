@@ -32,43 +32,63 @@ class generalAnalysis():
         cycleNum: 1-indexed integer representing the current cycle
         """
         # Loop through each availible peak
-        for peakNum in range(len(peakInfo_RedOx)):
-            peaks = peakInfo_RedOx[peakNum]
+        for peakGroupInd in range(len(peakInfo_RedOx)):
+            peaks = peakInfo_RedOx[peakGroupInd]
             
             # Add NAN as fillers for the missing values
             numMissing = cycleNum - len(peaks)
             if 0 < numMissing:
-                peakInfo_RedOx[peakNum].extend([[np.nan, np.nan, np.nan, []]]*numMissing)
+                peakInfo_RedOx[peakGroupInd].extend([[np.nan, np.nan, np.nan, []]]*numMissing)
         
         # Return the new peakInfo_RedOx with the value added
         return peakInfo_RedOx
         
-    def addPeakInfo_SearchEp(self, peakInfo_RedOx, peakPotential, peakCurrent, linearFitBounds, linearFit, cycleNum):
-        foundPeak = False
-        # Loop through each availible peak
-        for peakNum in range(len(peakInfo_RedOx)):
-            peaks = peakInfo_RedOx[peakNum]
-            
+    def addPeakInfo_toGroups(self, peakPotentialGroups, peakCurrentGroups, baselineBoundsGroups, 
+                             baselineFitGroups, peakPotential, peakCurrent, linearFitBounds, linearFit, cycleNum):
+        """
+        peakInfo_RedOx: List of List of peakInds. 
+        """
+        peakGroupFound = False
+        # For each set of peaks.
+        for peakGroupInd in range(len(peakPotentialGroups)):
+            peakPotentials = np.asarray(peakPotentialGroups[peakGroupInd])
             # Calculate the average potential for this peak (last 3 values)
-            peakPotentials = np.array(np.array(peaks, dtype=object)[:,0], dtype=float)
-            peakPotentials = peakPotentials[~np.isnan(peakPotentials)][-3:]
-            if len(peakPotentials) != 0:
+            recentPeakPotentials = peakPotentials[~np.isnan(peakPotentials)][-3:]
+                        
+            # If there are recent peaks
+            if len(recentPeakPotentials) != 0:
+                # Take the average of the recent peak potentials
+                peakPotentialAv = np.nanmean(recentPeakPotentials)
+            else:
+                # Else, take the average of all the peak ppoentials
                 peakPotentialAv = np.nanmean(peakPotentials)
                 
-                # If the peakPotential is within range 
-                if abs(peakPotential - peakPotentialAv) < self.maxPeakPotentialDeviation:
-                    # Then add the peak to this map
-                    peakInfo_RedOx[peakNum].append([peakPotential, peakCurrent, linearFitBounds, linearFit])
-                    foundPeak = True
-                    break
-            
-        if not foundPeak:
-            peakInfo_RedOx.append([])
-            peakInfo_RedOx = self.populateNullPeaks(peakInfo_RedOx, cycleNum)
-            peakInfo_RedOx[-1].append([peakPotential, peakCurrent, linearFitBounds, linearFit])
+            # If the peakPotential is within range 
+            if abs(peakPotential - peakPotentialAv) < self.maxPeakPotentialDeviation:
+                peakGroupFound = True
+                break
+
+        # If no group was identified.
+        if not peakGroupFound:
+            # Make a new group.
+            newGroup = [np.nan] * cycleNum
+            # Add the group to the holders.
+            baselineFitGroups.append(newGroup.copy())
+            peakCurrentGroups.append(newGroup.copy())
+            peakPotentialGroups.append(newGroup.copy())
+            baselineBoundsGroups.append(newGroup.copy())
+            # Specify the group number
+            peakGroupInd = -1
+
+        
+        # Then add the peak to this map
+        baselineFitGroups[peakGroupInd].append(linearFit)
+        peakCurrentGroups[peakGroupInd].append(peakCurrent)
+        peakPotentialGroups[peakGroupInd].append(peakPotential)
+        baselineBoundsGroups[peakGroupInd].append(linearFitBounds)
         
         # Return the new peakInfo_RedOx with the value added
-        return peakInfo_RedOx
+        # return peakPotentialGroups, peakCurrentGroups, baselineBoundsGroups, baselineFitGroups
     
 # -------------------------------------------------------------------------- #
 # ------------------------------ CV Extraction ----------------------------- #
@@ -78,7 +98,7 @@ class processData(generalAnalysis):
     def __init__(self, numInitCyclesToSkip, useCHIPeaks):
         super().__init__()
         # Initialize CV analysis
-        self.analyzeCV = cvAnalysis.cvAnalysis()
+        self.analyzeCV = cvAnalysis.cvProtocol()
         # Specify analysis paramaeters.
         self.useCHIPeaks = useCHIPeaks
         self.numInitCyclesToSkip = numInitCyclesToSkip
@@ -209,7 +229,8 @@ class processData(generalAnalysis):
                 if len(peakInfoHolder[reductiveScan]) == cycleNum:
                     peakInfoHolder[reductiveScan].append([])
                 # Add the peaks to the cycle
-                peakInfoHolder[reductiveScan] = self.addPeakInfo_SearchEp(peakInfoHolder[reductiveScan], Ep, Ip, np.nan, [], cycleNum-1)
+                assert False
+                peakInfoHolder[reductiveScan] = self.addPeakInfo_toGroups(peakInfoHolder[reductiveScan], Ep, Ip, np.nan, [], cycleNum-1)
         
         # Add the peaks to the cycle
         peakInfoHolder[0] = self.populateNullPeaks(peakInfoHolder[0], cycleNum)
@@ -219,8 +240,9 @@ class processData(generalAnalysis):
     
     def getPeaks(self, potentialFrames, currentFrames, pointsPerSegment):        
         # Create data structures to hold information: [OXIDATION, REDUCTION]
-        peakInfoHolder = [[], []]
-        
+        bothPeakPotentialGroups, bothPeakCurrentGroups = [[], []], [[], []]
+        bothBaselineBoundsGroups, bothBaselineFitGroups = [[], []], [[], []]
+                
         # Loop through each CV cycle
         for cycleNum in range(len(potentialFrames)):
             # Extract the Potential and the Current
@@ -231,25 +253,38 @@ class processData(generalAnalysis):
             for segmentScale in range(2):
                 potential = potentialFull[segmentScale*pointsPerSegment:(segmentScale+1)*pointsPerSegment]
                 current = currentFull[segmentScale*pointsPerSegment:(segmentScale+1)*pointsPerSegment]
-
+                
                 # Analyze each segment
-                linearFit, peakPotential, peakCurrent, linearFitBounds, reductiveScan = self.analyzeCV.findPeaks(potential, current)
+                allLinearFits, peakPotentials, peakCurrents, allLinearFitBounds, reductiveScan = self.analyzeCV.analyzeData(potential, current)
 
-                # If a peak was found
-                if len(linearFit) != 0:
-                    # Store the data as reductive or oxidative
-                    linearFitBounds += segmentScale*pointsPerSegment
-                    linearFit = np.concatenate((([0]*segmentScale*pointsPerSegment), linearFit))
-                    peakInfoHolder[reductiveScan] = self.addPeakInfo_SearchEp(peakInfoHolder[reductiveScan], peakPotential, peakCurrent, linearFitBounds, linearFit, cycleNum)
-                # Finish the cycle giving every peak we are tracking a value
-                peakInfoHolder[reductiveScan] = self.populateNullPeaks(peakInfoHolder[reductiveScan], cycleNum+1)
+                # For each peak found in the data.
+                for fitInd in range(len(allLinearFits)):
+                    linearFit, linearFitBounds = allLinearFits[fitInd], allLinearFitBounds[fitInd]
+                    peakPotential, peakCurrent = peakPotentials[fitInd], peakCurrents[fitInd]
+                    
+                    # Compile all the data collected for this peak.
+                    self.addPeakInfo_toGroups(bothPeakPotentialGroups[reductiveScan], bothPeakCurrentGroups[reductiveScan], 
+                                              bothBaselineBoundsGroups[reductiveScan], bothBaselineFitGroups[reductiveScan], 
+                                              peakPotential, peakCurrent, linearFitBounds, linearFit, cycleNum)
         
-        # Add the peaks to the cycle
-        peakInfoHolder[0] = self.populateNullPeaks(peakInfoHolder[0], cycleNum+1)
-        peakInfoHolder[1] = self.populateNullPeaks(peakInfoHolder[1], cycleNum+1)
+        # Convert to numpy arrays
+        bothBaselineFitGroups = np.asarray(bothBaselineFitGroups)        # Dim: 2, # groups, # frames, # points per red/ox
+        bothPeakCurrentGroups = np.asarray(bothPeakCurrentGroups)        # Dim: 2, # groups, # frames
+        bothPeakPotentialGroups = np.asarray(bothPeakPotentialGroups)    # Dim: 2, # groups, # frames
+        bothBaselineBoundsGroups = np.asarray(bothBaselineBoundsGroups)  # Dim: 2, # groups, # frames, # points per red/ox
+        # Assert the integrity of all the data
+        self.assertHolderIntegrity(bothPeakPotentialGroups, bothPeakCurrentGroups, bothBaselineBoundsGroups, bothBaselineFitGroups, len(potentialFrames), len(potential))
 
-        return peakInfoHolder
+        return bothPeakPotentialGroups, bothPeakCurrentGroups, bothBaselineBoundsGroups, bothBaselineFitGroups
             
+    def assertHolderIntegrity(self, bothPeakPotentialGroups, bothPeakCurrentGroups, bothBaselineBoundsGroups, bothBaselineFitGroups, numFrames, numPoints):
+        numGroups = len(bothPeakPotentialGroups[0])
+        # Assert that the holders have the correct shape.
+        assert bothPeakCurrentGroups.shape == (2, numGroups, numFrames), bothPeakCurrentGroups.shape
+        assert bothPeakPotentialGroups.shape == (2, numGroups, numFrames), bothPeakPotentialGroups.shape
+        assert bothBaselineBoundsGroups.shape == (2, numGroups, numFrames, 2), bothBaselineBoundsGroups.shape
+        assert bothBaselineFitGroups.shape == (2, numGroups, numFrames, numPoints), bothBaselineFitGroups.shape
+
     def processCV(self, xlWorksheet, xlWorkbook):  
         # Get the details about the the CV program
         startRow, scanRate, pointsPerScan, pointsPerSegment, startSegment, numberOfSegments, skipOffset = self.getRunInfo(xlWorksheet)
@@ -260,14 +295,14 @@ class processData(generalAnalysis):
         
         # Find the peaks in each CV scan
         if self.useCHIPeaks:
-            peakInfoHolder = self.getPeaksCHI(xlWorksheet, startRow, startSegment, skipOffset, numberOfSegments)
+            bothPeakPotentialGroups, bothPeakCurrentGroups, bothBaselineBoundsGroups, bothBaselineFitGroups = self.getPeaksCHI(xlWorksheet, startRow, startSegment, skipOffset, numberOfSegments)
         else:
-            peakInfoHolder = self.getPeaks(potentialFrames, currentFrames, pointsPerSegment)
+            bothPeakPotentialGroups, bothPeakCurrentGroups, bothBaselineBoundsGroups, bothBaselineFitGroups = self.getPeaks(potentialFrames, currentFrames, pointsPerSegment)
             
         # Finished Data Collection: Close Workbook and Return Data to User
         xlWorkbook.close()
         print("\tFinished Data Analysis");
-        return peakInfoHolder, currentFrames, potentialFrames, timeFrames
+        return bothPeakPotentialGroups, bothPeakCurrentGroups, bothBaselineBoundsGroups, bothBaselineFitGroups, currentFrames, potentialFrames, timeFrames
 
     
     

@@ -187,37 +187,39 @@ class saveData(excelFormat):
             worksheet = WB.create_sheet(self.emptySheetName)
         return WB, worksheet
     
-    def saveDataCV(self, peakInfoHolder, saveDataFolder, saveExcelName, sheetName = "CV Analysis"):
+    def saveDataCV(self, bothPeakPotentialGroups, bothPeakCurrentGroups, bothBaselineBoundsGroups, \
+                   bothBaselineFitGroups, saveDataFolder, saveExcelName, sheetName = "CV Analysis"):
         print("Saving the Data")
         # Create Output File Directory to Save Data: If Not Already Created
         os.makedirs(saveDataFolder, exist_ok=True)
-        
-        # Create Path to Save the Excel File
-        excelFile = saveDataFolder + saveExcelName
+        numPeakGroups = len(bothPeakPotentialGroups[0])
+        numFrames = len(bothPeakPotentialGroups[0][0])
+        numScans = len(bothPeakPotentialGroups)
         
         # Get the excel document.
+        excelFile = saveDataFolder + saveExcelName
         WB, worksheet = self.getExcelDocument(excelFile, overwriteSave = True)
             
         headers = ["Cycle Number"]
         # Add a header label for each peak
         peakTypes = ["Oxidation", "Reduction"]
-        for reductiveScan in range(len(peakInfoHolder)):
+        for reductiveScan in range(numScans):
             peakType = peakTypes[reductiveScan]
-            for peakNum in range(len(peakInfoHolder[reductiveScan])):
-                peakInfoString = peakType + " Peak " + str(peakNum)
+            for peakGroupInd in range(numPeakGroups):
+
+                peakInfoString = peakType + " Peak " + str(peakGroupInd + 1)
                 headers.extend([peakInfoString + " Potential (V)", peakInfoString + " Current (uAmps)", ""])
         worksheet.append(headers)
         
         # Organize and save the data
-        for frameNum in range(len(peakInfoHolder[0][0])):
+        for frameNum in range(numFrames):
             frameData = [frameNum+1]
-            for reductiveScan in range(len(peakInfoHolder)):
-                for peakNum in range(len(peakInfoHolder[reductiveScan])):
-                    
-                    Ip = peakInfoHolder[reductiveScan][peakNum][frameNum][1]
-                    Ep = peakInfoHolder[reductiveScan][peakNum][frameNum][0]
+            
+            for reductiveScan in range(numScans):
+                for peakGroupInd in range(numPeakGroups):
+                    Ip = bothPeakCurrentGroups[reductiveScan][peakGroupInd][frameNum]
+                    Ep = bothPeakPotentialGroups[reductiveScan][peakGroupInd][frameNum]
                     frameData.extend([Ep, Ip, ""])
-
             # Write the Data to Excel
             worksheet.append(frameData)
         
